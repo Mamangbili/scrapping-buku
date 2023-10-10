@@ -14,14 +14,33 @@ const getBook = async () => {
 
     await page.goto("http://books.toscrape.com/", { waitUntil: 'domcontentloaded' })
 
-    const extractBookPerPage = () => {
-        const cardsOfBooks = document.querySelectorAll(".product_pod")
-        const title = []
-        cardsOfBooks.forEach(each => title.push(each.querySelector("h3 > a ").innerHTML))
-        return title
-    }
 
-    const result = await page.evaluate(extractBookPerPage)
+    const pages = []
+    
+    const extractBookPerPage = async ()=>{
+        const section = await page.$('section')
+        const result = await section.$$eval(".product_pod > h3 > a", nodes => nodes.map((each)=>each.innerHTML))
+        return result
+    }
+    
+    const clickAndWait = async ()=>{
+        await page.click('li.next>a');
+        await page.waitForSelector('li.next>a')
+    }
+    
+    const extract10Pages = async ()=>{
+        const result = {}
+        for(let i = 0 ; i <= 10; i++){
+            if(i<10){
+                result[i]=(await extractBookPerPage())
+                await clickAndWait()
+            }
+                else result[i]= (await extractBookPerPage())
+        }       
+        return result;
+    }
+    
+    const result = await extract10Pages()
 
 
     await browser.close()
@@ -30,7 +49,7 @@ const getBook = async () => {
 
 const books = JSON.stringify(await getBook())
 
-fs.writeFile("bookTitle.txt",books, (err)=>{
+fs.writeFile("bookTitle.txt", books, (err) => {
     err ? console.log("terjadi kesalahan") : console.log("file berhasil dibuat")
 
 })
