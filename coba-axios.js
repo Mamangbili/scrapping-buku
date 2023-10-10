@@ -1,9 +1,6 @@
-import express from "express";
 import axios, { isCancel, AxiosError } from 'axios';
 import * as cheerio from "cheerio";
-
-// const port = process.env.PORT || 4000;
-
+import fs from "fs";
 // const app = express();
 
 async function scrapAllBook(i) {
@@ -26,7 +23,16 @@ async function scrap10pages() {
     const pages = Array(10).fill(0).map((_, index) => {
         return scrapAllBook(index + 1)
     });
-    return Promise.all(pages);
+    
+    const resolvedTitles = await Promise.all(pages)
+    const dalamObject = {}
+    resolvedTitles.forEach((titles,index)=>{
+        dalamObject[index+1]=titles
+    })
+    
+    return dalamObject;
 }
 
-console.log(await scrap10pages())
+const data = await scrap10pages()
+
+fs.writeFileSync("resultAxios.json",JSON.stringify(data));
